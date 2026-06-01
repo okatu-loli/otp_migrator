@@ -184,4 +184,4 @@ lib/
 
 The original [decodeGoogleOTP](https://github.com/Kuingsmile/decodeGoogleOTP) project is released under the **MIT License**.
 
-This Flutter project is inspired by that work and may be licensed accordingly. No `LICENSE` file is currently present in this repository — contributors should add one before distributing.
+This Flutter project is likewise released under the **MIT License** — see the [`LICENSE`](LICENSE) file. Copyright (c) 2026 okatu-loli.
