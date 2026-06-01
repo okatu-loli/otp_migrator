@@ -62,17 +62,23 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
   // ---------------------------------------------------------------------------
 
   Future<void> _pickImages() async {
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-      type: FileType.image,
-      withData: true,
-    );
-    if (result == null) return;
-    for (final file in result.files) {
-      final bytes = file.bytes;
-      if (bytes == null) continue;
-      final url = decodeQrFromImageBytes(bytes);
-      ref.read(parseGroupsProvider.notifier).add(_groupFor(file.name, url));
+    try {
+      final result = await FilePicker.pickFiles(
+        allowMultiple: true,
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null) return;
+      for (final file in result.files) {
+        final bytes = file.bytes;
+        if (bytes == null) continue;
+        final url = decodeQrFromImageBytes(bytes);
+        ref.read(parseGroupsProvider.notifier).add(_groupFor(file.name, url));
+      }
+    } catch (e) {
+      // Surface any native/plugin failure instead of silently doing nothing.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 

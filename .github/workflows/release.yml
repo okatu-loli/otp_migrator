@@ -246,8 +246,12 @@ jobs:
                 lipo "$f" -thin "$ARCH" -output "$f"
               fi
             done < <(find "$WORK/$OUT" -type f)
-            # Thinning invalidates code signatures; re-sign ad-hoc.
-            codesign --force --deep --sign - "$WORK/$OUT"
+            # Thinning invalidates signatures AND drops entitlements; re-sign
+            # ad-hoc WITH the sandbox + user-selected-files entitlements so the
+            # file picker works (matches a normal Flutter macOS build).
+            codesign --force --deep --sign - \
+              --entitlements "$GITHUB_WORKSPACE/macos/Runner/Release.entitlements" \
+              "$WORK/$OUT"
             ( cd "$WORK" && ditto -c -k --keepParent "$OUT" "$GITHUB_WORKSPACE/otp_migrator-macos-${LABEL}.zip" )
           done
           echo "built: otp_migrator-macos-x64.zip otp_migrator-macos-arm64.zip"
