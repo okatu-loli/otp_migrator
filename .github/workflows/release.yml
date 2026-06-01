@@ -61,11 +61,21 @@ jobs:
             section docs     "📝 Docs"          "文档"
             section ci       "👷 CI / Build"    "构建 / CI"
             section chore    "🔧 Chores"        "杂项"
-            # Anything that doesn't follow the convention.
             other=$(git log $RANGE --no-merges --pretty='%s' \
               | grep -Ev "^(feat|fix|perf|refactor|docs|ci|chore)(\(.+\))?(!)?: " | sed 's/^/- /')
             if [ -n "$other" ]; then printf '### 🔖 Other / 其它\n%s\n\n' "$other"; fi
-            printf -- '---\n📦 Downloads below are split by platform & architecture. / 下方产物按平台与架构拆分。\n'
+            printf -- '---\n📦 Downloads are split by platform & CPU architecture. / 下方产物按平台与 CPU 架构拆分。\n\n'
+            printf '| Platform | Arch | Asset |\n|---|---|---|\n'
+            printf '| Windows | x64 | `otp_migrator-windows-x64.zip` |\n'
+            printf '| Windows | arm64 | `otp_migrator-windows-arm64.zip` |\n'
+            printf '| macOS | universal (arm64+x64) | `otp_migrator-macos-universal.zip` |\n'
+            printf '| Linux | x64 | `otp_migrator-linux-x64.tar.gz` |\n'
+            printf '| Linux | arm64 | `otp_migrator-linux-arm64.tar.gz` |\n'
+            printf '| Android | arm64-v8a | `otp_migrator-android-arm64-v8a.apk` |\n'
+            printf '| Android | armeabi-v7a | `otp_migrator-android-armeabi-v7a.apk` |\n'
+            printf '| Android | x86_64 | `otp_migrator-android-x86_64.apk` |\n'
+            printf '| Android | universal | `otp_migrator-android-universal.apk` |\n'
+            printf '| Web | any | `otp_migrator-web.zip` |\n'
           } > notes.md
           echo "----- notes.md -----"; cat notes.md
 
@@ -92,17 +102,16 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: { flutter-version: "3.41.6", channel: stable, cache: true }
       - run: flutter pub get
-      # Split per ABI → one APK per Android architecture.
-      - run: flutter build apk --release --split-per-abi --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
-      - name: Upload per-ABI APKs
+      - name: Build universal + per-ABI APKs
         run: |
+          flutter build apk --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
+          cp build/app/outputs/flutter-apk/app-release.apk "$GITHUB_WORKSPACE/otp_migrator-android-universal.apk"
+          flutter build apk --release --split-per-abi --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
           cd build/app/outputs/flutter-apk
           for abi in arm64-v8a armeabi-v7a x86_64; do
-            f="app-${abi}-release.apk"
-            [ -f "$f" ] && cp "$f" "$GITHUB_WORKSPACE/otp_migrator-android-${abi}.apk"
+            [ -f "app-${abi}-release.apk" ] && cp "app-${abi}-release.apk" "$GITHUB_WORKSPACE/otp_migrator-android-${abi}.apk"
           done
-          cd "$GITHUB_WORKSPACE"
-          gh release upload "$TAG" otp_migrator-android-*.apk --clobber
+      - run: gh release upload "$TAG" otp_migrator-android-*.apk --clobber
 
   web:
     needs: prepare
@@ -120,7 +129,7 @@ jobs:
       - run: cd build/web && zip -rq "$GITHUB_WORKSPACE/otp_migrator-web.zip" .
       - run: gh release upload "$TAG" otp_migrator-web.zip --clobber
 
-  linux:
+  linux-x64:
     needs: prepare
     runs-on: ubuntu-latest
     env:
@@ -137,7 +146,24 @@ jobs:
       - run: cd build/linux/x64/release/bundle && tar -czf "$GITHUB_WORKSPACE/otp_migrator-linux-x64.tar.gz" .
       - run: gh release upload "$TAG" otp_migrator-linux-x64.tar.gz --clobber
 
-  windows:
+  linux-arm64:
+    needs: prepare
+    runs-on: ubuntu-24.04-arm
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter build linux --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
+      - run: cd build/linux/arm64/release/bundle && tar -czf "$GITHUB_WORKSPACE/otp_migrator-linux-arm64.tar.gz" .
+      - run: gh release upload "$TAG" otp_migrator-linux-arm64.tar.gz --clobber
+
+  windows-x64:
     needs: prepare
     runs-on: windows-latest
     env:
@@ -153,6 +179,24 @@ jobs:
       - run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath otp_migrator-windows-x64.zip
       - run: gh release upload "$env:TAG" otp_migrator-windows-x64.zip --clobber
 
+  windows-arm64:
+    needs: prepare
+    runs-on: windows-11-arm
+    # ARM64 Windows desktop is newer in Flutter; don't fail the whole release if unavailable.
+    continue-on-error: true
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter build windows --release --build-name "$env:VERSION" --build-number "$env:GITHUB_RUN_NUMBER"
+      - run: Compress-Archive -Path build/windows/arm64/runner/Release/* -DestinationPath otp_migrator-windows-arm64.zip
+      - run: gh release upload "$env:TAG" otp_migrator-windows-arm64.zip --clobber
+
   macos:
     needs: prepare
     runs-on: macos-latest
@@ -165,7 +209,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: { flutter-version: "3.41.6", channel: stable, cache: true }
       - run: flutter pub get
-      # macOS builds a universal binary (arm64 + x86_64).
+      # macOS builds a universal binary (arm64 + x86_64) — covers both Apple Silicon and Intel.
       - run: flutter build macos --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
       - run: cd build/macos/Build/Products/Release && zip -rq "$GITHUB_WORKSPACE/otp_migrator-macos-universal.zip" otp_migrator.app
       - run: gh release upload "$TAG" otp_migrator-macos-universal.zip --clobber
