@@ -66,7 +66,8 @@ jobs:
             if [ -n "$other" ]; then printf '### 🔖 Other / 其它\n%s\n\n' "$other"; fi
             printf -- '---\n📦 Downloads are split by platform & CPU architecture. / 下方产物按平台与 CPU 架构拆分。\n\n'
             printf '| Platform | Arch | Asset |\n|---|---|---|\n'
-            printf '| Windows | x64 (runs on ARM64 via emulation) | `otp_migrator-windows-x64.zip` |\n'
+            printf '| Windows | x64 | `otp_migrator-windows-x64.zip` |\n'
+            printf '| Windows | arm64 (Flutter master, experimental) | `otp_migrator-windows-arm64.zip` |\n'
             printf '| macOS | universal (arm64+x64) | `otp_migrator-macos-universal.zip` |\n'
             printf '| Linux | x64 | `otp_migrator-linux-x64.tar.gz` |\n'
             printf '| Linux | arm64 | `otp_migrator-linux-arm64.tar.gz` |\n'
@@ -157,13 +158,21 @@ jobs:
       TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev clang cmake pkg-config curl git unzip xz-utils liblzma-dev
+      - name: Install Linux build deps (with retry)
+        run: |
+          for i in 1 2 3; do
+            sudo apt-get update -y && sudo apt-get install -y \
+              curl git unzip xz-utils zip libglu1-mesa clang cmake ninja-build \
+              pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev && break
+            echo "apt attempt $i failed; retrying in 10s"; sleep 10
+          done
       - name: Set up Flutter (git clone, arm64-capable)
         run: |
           git clone --depth 1 -b 3.41.6 https://github.com/flutter/flutter.git "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
       - run: flutter --version
       - run: flutter config --enable-linux-desktop
+      - run: flutter precache --linux
       - run: flutter pub get
       - run: flutter build linux --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
       - run: cd build/linux/arm64/release/bundle && tar -czf "$GITHUB_WORKSPACE/otp_migrator-linux-arm64.tar.gz" .
@@ -185,9 +194,27 @@ jobs:
       - run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath otp_migrator-windows-x64.zip
       - run: gh release upload "$env:TAG" otp_migrator-windows-x64.zip --clobber
 
-  # NOTE: No windows-arm64 job. Flutter stable does not target Windows ARM64
-  # (the SDK/toolchain is x64-only). Windows 11 on ARM runs the x64 build via
-  # built-in x64 emulation, so otp_migrator-windows-x64.zip covers ARM64 too.
+  windows-arm64:
+    needs: prepare
+    runs-on: windows-11-arm
+    # Native Windows ARM64 currently ships only on Flutter's master channel
+    # (subosito/flutter-action#345; flutter/flutter#176385 not yet on stable).
+    # Use master with NO version pin, best-effort.
+    continue-on-error: true
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: master
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release --build-name "$env:VERSION" --build-number "$env:GITHUB_RUN_NUMBER"
+      - run: Compress-Archive -Path build/windows/arm64/runner/Release/* -DestinationPath otp_migrator-windows-arm64.zip
+      - run: gh release upload "$env:TAG" otp_migrator-windows-arm64.zip --clobber
 
   macos:
     needs: prepare
