@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import 'package:otp_migrator/core/app_info.dart';
 import 'package:otp_migrator/l10n/app_localizations.dart';
 import 'package:otp_migrator/state/locale_provider.dart';
 import '../theme/app_theme.dart';
@@ -11,9 +14,15 @@ class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   List<Widget> _appBarActions(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final current = ref.watch(localeProvider);
     return [
       _LanguageMenu(current: current),
+      IconButton(
+        icon: const Icon(Icons.info_outline),
+        tooltip: l10n.about,
+        onPressed: () => _showAbout(context),
+      ),
     ];
   }
 
@@ -119,4 +128,45 @@ class _LanguageMenu extends ConsumerWidget {
       ],
     );
   }
+}
+
+Future<void> _showAbout(BuildContext context) async {
+  final l10n = AppLocalizations.of(context);
+  String versionText = '';
+  try {
+    final info = await PackageInfo.fromPlatform();
+    versionText = 'v${info.version} (${info.buildNumber})';
+  } catch (_) {
+    // Leave version blank if it cannot be read (e.g. some test envs).
+  }
+  if (!context.mounted) return;
+
+  showAboutDialog(
+    context: context,
+    applicationName: l10n.appTitle,
+    applicationVersion: versionText,
+    children: [
+      const SizedBox(height: AppSpacing.sm),
+      Row(
+        children: [
+          Text('${l10n.aboutSourceCode}: '),
+          Flexible(
+            child: InkWell(
+              onTap: () => launchUrl(
+                Uri.parse(kRepoUrl),
+                mode: LaunchMode.externalApplication,
+              ),
+              child: Text(
+                kRepoUrl,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
 }
