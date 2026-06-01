@@ -49,4 +49,15 @@ void main() {
     expect(text, startsWith('otpauth://totp/'));
     expect(exportUrl(accounts), exportText(accounts));
   });
+
+  test('csv neutralizes spreadsheet formula injection', () {
+    final evil = [OtpAccount(
+      secret: Uint8List.fromList([0x48,0x65,0x6C,0x6C,0x6F]),
+      name: '=HYPERLINK("http://evil")', issuer: '@cmd', algorithm: OtpAlgorithm.sha1,
+      digits: OtpDigits.six, type: OtpType.totp, counter: 0)];
+    final out = exportCsv(evil);
+    // 危险前导字符被单引号中和，且因含特殊字符仍被引号包裹
+    expect(out, contains('"\'=HYPERLINK'));
+    expect(out, contains("'@cmd"));
+  });
 }
