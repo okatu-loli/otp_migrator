@@ -12,6 +12,14 @@
 
 > 这是一个跨平台 Flutter 应用，用于解码 Google Authenticator 导出的迁移二维码，并将 OTP 账户导出为多种格式。
 
+<p align="center">
+  <a href="https://github.com/okatu-loli/otp_migrator/actions/workflows/ci.yml"><img src="https://github.com/okatu-loli/otp_migrator/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://okatu-loli.github.io/otp_migrator/"><img src="https://img.shields.io/badge/Live%20demo-Web-0F7B6C" alt="Live demo"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
+</p>
+
+**🌐 Live web demo: https://okatu-loli.github.io/otp_migrator/** (decoding runs entirely in your browser — but for real secrets, prefer a desktop build; see [Security Notes](#security-notes)).
+
 Inspired by and mirroring the functionality of [decodeGoogleOTP](https://github.com/Kuingsmile/decodeGoogleOTP) (MIT), a Go CLI tool for the same purpose. This GUI brings full offline decoding and export to macOS, Windows, Linux, iOS, Android, and the web — no app-store dependency on Google Authenticator required.
 
 ---
