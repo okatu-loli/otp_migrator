@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo/logo.svg" width="120" alt="OTP Migrator logo">
+</p>
+
 # OTP Migrator
 
 **A cross-platform Flutter GUI for decoding Google Authenticator export QR codes.**

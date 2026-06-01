@@ -1,0 +1,17 @@
+flutter_launcher_icons:
+  image_path: "assets/logo/icon_master.png"
+  # Slate-background full-bleed master; platforms apply their own masking.
+  android: true
+  adaptive_icon_background: "#11181A"
+  adaptive_icon_foreground: "assets/logo/icon_foreground.png"
+  ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    background_color: "#11181A"
+    theme_color: "#0F7B6C"
+  windows:
+    generate: true
+    icon_size: 256
+  macos:
+    generate: true

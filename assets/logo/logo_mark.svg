@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="OTP Migrator mark">
+  <title>OTP Migrator mark</title>
+  <!-- Transparent-background mark (knock-out ring), for overlay / adaptive use.
+       The middle ring uses fill-rule evenodd so the background shows through. -->
+  <path fill="#3DBFA8" fill-rule="evenodd"
+        d="M271.3 256h296.4a87 87 0 0 1 87 87v296.4a87 87 0 0 1-87 87H271.3a87 87 0 0 1-87-87V343a87 87 0 0 1 87-87Z
+           M322.4 343a51 51 0 0 0-51 51v194.8a51 51 0 0 0 51 51h194.6a51 51 0 0 0 51-51V394a51 51 0 0 0-51-51Z"/>
+  <rect x="353.3" y="425" width="133" height="133" rx="31" fill="#3DBFA8"/>
+  <rect x="619.5" y="261.1" width="138.2" height="138.2" rx="30" fill="#3DBFA8" opacity="0.90"/>
+  <rect x="732.2" y="153.6" width="97.3"  height="97.3"  rx="21" fill="#3DBFA8" opacity="0.55"/>
+  <rect x="819.2" y="76.8"  width="61.4"  height="61.4"  rx="14" fill="#3DBFA8" opacity="0.32"/>
+</svg>

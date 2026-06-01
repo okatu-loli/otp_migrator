@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="360" viewBox="0 0 1240 360" role="img" aria-label="OTP Migrator">
+  <title>OTP Migrator</title>
+  <defs>
+    <clipPath id="wm-round"><rect width="1024" height="1024" rx="224" ry="224"/></clipPath>
+  </defs>
+
+  <!-- Icon (scaled) -->
+  <g transform="translate(30,30) scale(0.293)">
+    <g clip-path="url(#wm-round)">
+      <rect width="1024" height="1024" fill="#11181A"/>
+      <rect x="184.3" y="256" width="471" height="471" rx="87" fill="#3DBFA8"/>
+      <rect x="271.4" y="343" width="297" height="297" rx="51" fill="#11181A"/>
+      <rect x="353.3" y="425" width="133" height="133" rx="31" fill="#3DBFA8"/>
+      <rect x="619.5" y="261.1" width="138.2" height="138.2" rx="30" fill="#3DBFA8" opacity="0.90"/>
+      <rect x="732.2" y="153.6" width="97.3" height="97.3" rx="21" fill="#3DBFA8" opacity="0.55"/>
+      <rect x="819.2" y="76.8" width="61.4" height="61.4" rx="14" fill="#3DBFA8" opacity="0.32"/>
+    </g>
+  </g>
+
+  <!-- Wordmark: "OTP" in mono (data voice), "Migrator" in sans (chrome voice) -->
+  <text x="392" y="222" font-family="'SF Mono','JetBrains Mono','Menlo',monospace"
+        font-size="128" font-weight="700" letter-spacing="2" fill="#0F7B6C">OTP</text>
+  <text x="392" y="222" dx="270" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+        font-size="128" font-weight="600" letter-spacing="-1" fill="#15201F"> Migrator</text>
+</svg>
