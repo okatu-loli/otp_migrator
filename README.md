@@ -2,6 +2,10 @@
   <img src="assets/logo/logo.svg" width="120" alt="OTP Migrator logo">
 </p>
 
+<p align="center">
+  <b>English</b> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 # OTP Migrator
 
 **A cross-platform Flutter GUI for decoding Google Authenticator export QR codes.**
@@ -174,11 +178,11 @@ lib/
       app_theme.dart        # "Terminal Ledger" design system (light + dark)
     pages/
       home_page.dart        # Responsive two-panel layout
-    widgets/
       import_panel.dart     # File picker, paste field, camera button
       results_panel.dart    # Grouped account list, merge toggle
-      account_card.dart     # Single account display card
       export_dialog.dart    # Format selector + export action
+    widgets/
+      account_card.dart     # Single account display card
       qr_preview_dialog.dart# In-app QR code viewer
 ```
 
