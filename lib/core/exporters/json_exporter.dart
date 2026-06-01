@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:base32/base32.dart';
 import '../otp_account.dart';
+import '../secret_encoding.dart';
 
 String exportJson(List<OtpAccount> accounts) {
   final list = accounts.map((a) => {
         'issuer': a.issuer,
         'name': a.name,
-        'secret': base32.encode(a.secret).replaceAll('=', ''),
+        'secret': base32NoPad(a.secret),
         'type': a.type.uriLabel,
         'algorithm': a.algorithm.label,
         'digits': a.digits.count,
