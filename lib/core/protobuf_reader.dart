@@ -16,6 +16,9 @@ class ProtobufReader {
 
   bool get isAtEnd => _pos >= _bytes.length;
 
+  /// Returns a Dart 64-bit int matching protobuf int64 wire semantics.
+  /// MigrationPayload contains no uint64 fields, so sign-bit reinterpretation
+  /// of values ≥ 2^63 is not a concern for this schema.
   int readVarint() {
     int result = 0;
     int shift = 0;
