@@ -1,94 +1,171 @@
 name: Release
 
+# Release on every push to master (continuous delivery).
 on:
   push:
-    tags: ['v*']
+    branches: [master]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to release (e.g. v1.0.0)'
-        required: true
 
 permissions:
   contents: write
 
 env:
-  FLUTTER_VERSION: 3.41.6
+  FLUTTER_VERSION: "3.41.6"
 
 jobs:
-  web:
+  # Gate + compute version + generate bilingual release notes + create the release.
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.41.6', channel: stable, cache: true }
-      - run: flutter pub get
-      # Default base-href "/" (Flutter rejects relative values); serve the zip from a web root.
-      - run: flutter build web --release
-      - run: cd build/web && zip -r ../../otp_migrator-web.zip .
-      - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: ${{ github.event.inputs.tag || github.ref_name }}
-          body_path: CHANGELOG.md
-          generate_release_notes: true
-          files: otp_migrator-web.zip
+          fetch-depth: 0 # full history for changelog generation
+
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
+
+      - run: flutter pub get
+      - name: Analyze (gate)
+        run: flutter analyze
+      - name: Test (gate)
+        run: flutter test
+
+      - name: Compute version
+        id: meta
+        run: |
+          DATE=$(date -u +%Y.%m.%d)
+          VERSION="${DATE}.${GITHUB_RUN_NUMBER}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate bilingual release notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then RANGE="${PREV_TAG}..HEAD"; else RANGE="HEAD"; fi
+          section() { # $1=prefix  $2=EN heading  $3=CN heading
+            local items
+            items=$(git log $RANGE --no-merges --pretty='%s' \
+              | grep -E "^$1(\(.+\))?(!)?: " \
+              | sed -E "s/^$1(\(.+\))?(!)?: //" | sed 's/^/- /')
+            if [ -n "$items" ]; then printf '### %s / %s\n%s\n\n' "$2" "$3" "$items"; fi
+          }
+          {
+            printf '> Auto-generated from commits since `%s`. / 由 `%s` 以来的提交自动生成。\n\n' "${PREV_TAG:-initial}" "${PREV_TAG:-initial}"
+            section feat     "✨ Features"      "新功能"
+            section fix      "🐛 Fixes"         "修复"
+            section perf     "⚡ Performance"   "性能"
+            section refactor "♻️ Refactor"      "重构"
+            section docs     "📝 Docs"          "文档"
+            section ci       "👷 CI / Build"    "构建 / CI"
+            section chore    "🔧 Chores"        "杂项"
+            # Anything that doesn't follow the convention.
+            other=$(git log $RANGE --no-merges --pretty='%s' \
+              | grep -Ev "^(feat|fix|perf|refactor|docs|ci|chore)(\(.+\))?(!)?: " | sed 's/^/- /')
+            if [ -n "$other" ]; then printf '### 🔖 Other / 其它\n%s\n\n' "$other"; fi
+            printf -- '---\n📦 Downloads below are split by platform & architecture. / 下方产物按平台与架构拆分。\n'
+          } > notes.md
+          echo "----- notes.md -----"; cat notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            --title "${{ steps.meta.outputs.tag }}" \
+            --notes-file notes.md \
+            --target "$GITHUB_SHA"
 
   android:
+    needs: prepare
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17' }
+        with: { distribution: temurin, java-version: "17" }
       - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.41.6', channel: stable, cache: true }
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
       - run: flutter pub get
-      - run: flutter build apk --release
-      - run: mv build/app/outputs/flutter-apk/app-release.apk otp_migrator-android.apk
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: otp_migrator-android.apk
+      # Split per ABI → one APK per Android architecture.
+      - run: flutter build apk --release --split-per-abi --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
+      - name: Upload per-ABI APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            f="app-${abi}-release.apk"
+            [ -f "$f" ] && cp "$f" "$GITHUB_WORKSPACE/otp_migrator-android-${abi}.apk"
+          done
+          cd "$GITHUB_WORKSPACE"
+          gh release upload "$TAG" otp_migrator-android-*.apk --clobber
+
+  web:
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter build web --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
+      - run: cd build/web && zip -rq "$GITHUB_WORKSPACE/otp_migrator-web.zip" .
+      - run: gh release upload "$TAG" otp_migrator-web.zip --clobber
 
   linux:
+    needs: prepare
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev
       - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.41.6', channel: stable, cache: true }
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
       - run: flutter pub get
-      - run: flutter build linux --release
+      - run: flutter build linux --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
       - run: cd build/linux/x64/release/bundle && tar -czf "$GITHUB_WORKSPACE/otp_migrator-linux-x64.tar.gz" .
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: otp_migrator-linux-x64.tar.gz
+      - run: gh release upload "$TAG" otp_migrator-linux-x64.tar.gz --clobber
 
   windows:
+    needs: prepare
     runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.41.6', channel: stable, cache: true }
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
       - run: flutter pub get
-      - run: flutter build windows --release
+      - run: flutter build windows --release --build-name "$env:VERSION" --build-number "$env:GITHUB_RUN_NUMBER"
       - run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath otp_migrator-windows-x64.zip
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: otp_migrator-windows-x64.zip
+      - run: gh release upload "$env:TAG" otp_migrator-windows-x64.zip --clobber
 
   macos:
+    needs: prepare
     runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.41.6', channel: stable, cache: true }
+        with: { flutter-version: "3.41.6", channel: stable, cache: true }
       - run: flutter pub get
-      - run: flutter build macos --release
-      - run: cd build/macos/Build/Products/Release && zip -r "$GITHUB_WORKSPACE/otp_migrator-macos.zip" otp_migrator.app
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: otp_migrator-macos.zip
+      # macOS builds a universal binary (arm64 + x86_64).
+      - run: flutter build macos --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
+      - run: cd build/macos/Build/Products/Release && zip -rq "$GITHUB_WORKSPACE/otp_migrator-macos-universal.zip" otp_migrator.app
+      - run: gh release upload "$TAG" otp_migrator-macos-universal.zip --clobber
