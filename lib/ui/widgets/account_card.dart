@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:otp_migrator/core/otp_account.dart';
 import 'package:otp_migrator/core/otpauth_uri.dart';
 import 'package:otp_migrator/core/secret_encoding.dart';
+import 'package:otp_migrator/l10n/app_localizations.dart';
 import 'package:otp_migrator/ui/widgets/qr_preview_dialog.dart';
 import '../theme/app_theme.dart';
 
@@ -22,15 +23,16 @@ class AccountCard extends StatelessWidget {
       ? account.name
       : '${account.issuer} · ${account.name}';
 
-  String get _meta =>
+  String _meta(AppLocalizations l10n) =>
       '${account.type.uriLabel.toUpperCase()} · '
       '${account.algorithm.label} · '
-      '${account.digits.count} 位';
+      '${l10n.digitsCount(account.digits.count)}';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     // Resolve the code-chip background — prefer surfaceContainer so it reads
     // as a tonal inset on both light and dark. The surfaceVariant design role
@@ -75,7 +77,7 @@ class AccountCard extends StatelessWidget {
 
                   // Metadata line — mono eyebrow
                   Text(
-                    _meta,
+                    _meta(l10n),
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontFamily: AppTheme.monoFontFamily,
                       letterSpacing: 0.5,
@@ -118,7 +120,7 @@ class AccountCard extends StatelessWidget {
             // ----------------------------------------------------------------
             IconButton(
               icon: const Icon(Icons.qr_code_2),
-              tooltip: '显示二维码',
+              tooltip: l10n.showQrCode,
               onPressed: () => showDialog<void>(
                 context: context,
                 builder: (_) => QrPreviewDialog(

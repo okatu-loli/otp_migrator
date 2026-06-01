@@ -5,11 +5,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:otp_migrator/core/otp_account.dart';
+import 'package:otp_migrator/l10n/app_localizations.dart';
 import 'package:otp_migrator/state/app_state.dart';
 import 'package:otp_migrator/state/parse_group.dart';
 import 'package:otp_migrator/ui/pages/results_panel.dart';
 import 'package:otp_migrator/ui/widgets/account_card.dart';
 import 'package:otp_migrator/ui/theme/app_theme.dart';
+
+Widget _wrap(Widget home) => ProviderScope(
+      child: MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: home,
+      ),
+    );
 
 /// A known OtpAccount: secret [0x48, 0x65, 0x6C, 0x6C, 0x6F] = "Hello"
 /// → base32NoPad → 'JBSWY3DP'
@@ -30,12 +41,7 @@ void main() {
   testWidgets('ResultsPanel shows empty hint when no groups imported',
       (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const Scaffold(body: ResultsPanel()),
-        ),
-      ),
+      _wrap(const Scaffold(body: ResultsPanel())),
     );
 
     expect(
@@ -53,12 +59,7 @@ void main() {
       'ResultsPanel shows AccountCard with issuer, name and base32 secret',
       (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const Scaffold(body: ResultsPanel()),
-        ),
-      ),
+      _wrap(const Scaffold(body: ResultsPanel())),
     );
 
     // Initially empty.
@@ -102,12 +103,7 @@ void main() {
   testWidgets('ResultsPanel renders failed group header without crashing',
       (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const Scaffold(body: ResultsPanel()),
-        ),
-      ),
+      _wrap(const Scaffold(body: ResultsPanel())),
     );
 
     final container = ProviderScope.containerOf(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:otp_migrator/l10n/app_localizations.dart';
 import 'package:otp_migrator/ui/pages/import_panel.dart';
 import 'package:otp_migrator/ui/theme/app_theme.dart';
 
@@ -11,6 +12,9 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           theme: AppTheme.light,
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const Scaffold(body: ImportPanel()),
         ),
       ),
@@ -29,6 +33,9 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           theme: AppTheme.light,
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const Scaffold(body: ImportPanel()),
         ),
       ),

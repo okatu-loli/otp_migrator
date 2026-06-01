@@ -11,6 +11,7 @@ import 'package:otp_migrator/core/otp_account.dart';
 import 'package:otp_migrator/core/otpauth_uri.dart';
 import 'package:otp_migrator/export/export_writer.dart';
 import 'package:otp_migrator/export/qr_image_renderer.dart';
+import 'package:otp_migrator/l10n/app_localizations.dart';
 import 'package:otp_migrator/state/app_state.dart';
 import '../theme/app_theme.dart';
 
@@ -53,12 +54,13 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
   Future<void> _run() async {
     if (_exporting) return;
 
+    final l10n = AppLocalizations.of(context);
     final accounts = _accounts();
 
     // Short-circuit before any native file dialog if there are no accounts.
     if (accounts.isEmpty) {
       setState(() {
-        _status = '没有可导出的账户，请先导入 OTP 数据。';
+        _status = l10n.noAccountsToExport;
         _isError = true;
       });
       return;
@@ -108,10 +110,10 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       setState(() {
         _exporting = false;
         if (dest == null) {
-          _status = '已取消';
+          _status = l10n.exportCancelled;
           _isError = false;
         } else {
-          _status = '导出成功 → $dest';
+          _status = l10n.exportedTo(dest);
           _isError = false;
         }
       });
@@ -119,7 +121,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       if (!mounted) return;
       setState(() {
         _exporting = false;
-        _status = '导出失败：$e';
+        _status = l10n.exportFailed(e.toString());
         _isError = true;
       });
     }
@@ -130,6 +132,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final semantics = theme.extension<AppSemanticColors>()!;
+    final l10n = AppLocalizations.of(context);
 
     // The status color follows the semantic palette: danger for errors, success for done.
     Color? statusColor;
@@ -139,7 +142,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
 
     return AlertDialog(
       // dialogTheme in AppTheme handles elevation / radius / bg / border.
-      title: Text('导出', style: theme.textTheme.titleLarge),
+      title: Text(l10n.export, style: theme.textTheme.titleLarge),
       contentPadding: const EdgeInsets.fromLTRB(
         AppSpacing.xl,
         AppSpacing.md,
@@ -165,7 +168,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: _formatRows(cs, theme),
+                children: _formatRows(cs, theme, l10n),
               ),
             ),
 
@@ -210,7 +213,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: _exporting ? null : _run,
@@ -223,23 +226,23 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                     color: cs.onPrimary,
                   ),
                 )
-              : const Text('导出'),
+              : Text(l10n.export),
         ),
       ],
     );
   }
 
-  static const _formatOptions = <(ExportFormat, String)>[
-    (ExportFormat.json, 'JSON 文件'),
-    (ExportFormat.csv, 'CSV 文件'),
-    (ExportFormat.text, '文本 URL 列表'),
-    (ExportFormat.url, 'URL 格式'),
-    (ExportFormat.qrImages, '二维码图片（每账户一张）'),
-  ];
+  List<(ExportFormat, String)> _formatOptions(AppLocalizations l10n) => [
+        (ExportFormat.json, l10n.exportFormatJson),
+        (ExportFormat.csv, l10n.exportFormatCsv),
+        (ExportFormat.text, l10n.exportFormatText),
+        (ExportFormat.url, l10n.exportFormatUrl),
+        (ExportFormat.qrImages, l10n.exportFormatQrImages),
+      ];
 
-  List<Widget> _formatRows(ColorScheme cs, ThemeData theme) {
+  List<Widget> _formatRows(ColorScheme cs, ThemeData theme, AppLocalizations l10n) {
     return [
-      for (final (fmt, label) in _formatOptions)
+      for (final (fmt, label) in _formatOptions(l10n))
         RadioListTile<ExportFormat>(
           value: fmt,
           title: Text(label, style: theme.textTheme.bodyLarge),

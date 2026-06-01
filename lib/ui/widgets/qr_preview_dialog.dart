@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+
+import 'package:otp_migrator/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 /// Dialog that renders an otpauth:// URL as a scannable QR code alongside
@@ -23,6 +25,7 @@ class QrPreviewDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Dialog(
       // dialogTheme in AppTheme handles elevation/radius/bg/border.
@@ -38,7 +41,7 @@ class QrPreviewDialog extends StatelessWidget {
               // Title
               // ----------------------------------------------------------------
               Text(
-                'Scan QR Code',
+                l10n.scanQrCode,
                 style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -105,7 +108,7 @@ class QrPreviewDialog extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
+                  child: Text(l10n.close),
                 ),
               ),
             ],

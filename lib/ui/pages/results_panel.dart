@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:otp_migrator/l10n/app_localizations.dart';
 import 'package:otp_migrator/state/app_state.dart';
 import 'package:otp_migrator/state/parse_group.dart';
 import 'package:otp_migrator/ui/pages/export_dialog.dart';
@@ -58,7 +59,7 @@ class _EmptyHint extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Text(
-          '从左侧导入二维码后，这里显示解析结果',
+          AppLocalizations.of(context).emptyResultsHint,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -81,6 +82,7 @@ class _Toolbar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -98,7 +100,7 @@ class _Toolbar extends ConsumerWidget {
           GestureDetector(
             onTap: () => ref.read(mergeEnabledProvider.notifier).toggle(),
             child: Text(
-              '合并导出（汇总去重）',
+              l10n.mergeExportDedup,
               style: theme.textTheme.bodyMedium,
             ),
           ),
@@ -109,7 +111,7 @@ class _Toolbar extends ConsumerWidget {
           TextButton.icon(
             onPressed: () => ref.read(parseGroupsProvider.notifier).clear(),
             icon: const Icon(Icons.clear_all),
-            label: const Text('清空'),
+            label: Text(l10n.clear),
           ),
           const SizedBox(width: AppSpacing.xs),
 
@@ -120,7 +122,7 @@ class _Toolbar extends ConsumerWidget {
               builder: (_) => const ExportDialog(),
             ),
             icon: const Icon(Icons.download),
-            label: const Text('导出'),
+            label: Text(l10n.export),
           ),
         ],
       ),
@@ -139,7 +141,7 @@ class _MergedList extends ConsumerWidget {
     if (accounts.isEmpty) {
       return Center(
         child: Text(
-          '没有可显示的账户',
+          AppLocalizations.of(context).noAccountsToShow,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -225,7 +227,9 @@ class _GroupSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Text(
-                group.ok ? '（无账户）' : '解析失败，无账户数据',
+                group.ok
+                    ? AppLocalizations.of(context).groupNoAccounts
+                    : AppLocalizations.of(context).groupParseFailed,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: group.ok ? cs.onSurfaceVariant : semantics.danger,
                 ),

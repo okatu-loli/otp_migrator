@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:otp_migrator/core/migration_decoder.dart';
+import 'package:otp_migrator/l10n/app_localizations.dart';
 import 'package:otp_migrator/scan/camera_scanner.dart';
 import 'package:otp_migrator/scan/image_qr_decoder.dart';
 import 'package:otp_migrator/state/app_state.dart';
@@ -45,7 +46,7 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
       return ParseGroup(
         sourceLabel: label,
         accounts: const [],
-        error: '未识别二维码',
+        error: AppLocalizations.of(context).qrNotRecognized,
       );
     }
     try {
@@ -78,12 +79,15 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
   void _decodePasted() {
     final text = _pasteController.text.trim();
     if (text.isEmpty) return;
-    ref.read(parseGroupsProvider.notifier).add(_groupFor('粘贴', text));
+    ref
+        .read(parseGroupsProvider.notifier)
+        .add(_groupFor(AppLocalizations.of(context).sourcePaste, text));
     _pasteController.clear();
   }
 
   void _openCamera() {
     if (!cameraScanSupported) return;
+    final cameraLabel = AppLocalizations.of(context).sourceCamera;
     showDialog<void>(
       context: context,
       builder: (ctx) => Dialog(
@@ -95,7 +99,7 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
               Navigator.pop(ctx);
               ref
                   .read(parseGroupsProvider.notifier)
-                  .add(_groupFor('摄像头', value.trim()));
+                  .add(_groupFor(cameraLabel, value.trim()));
             },
           ),
         ),
@@ -111,6 +115,7 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semantics = theme.extension<AppSemanticColors>()!;
+    final l10n = AppLocalizations.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -129,7 +134,7 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Text(
-                '⚠️ 浏览器环境处理 OTP 凭据存在泄露风险，敏感场景建议使用桌面端。',
+                l10n.webRiskWarning,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: semantics.onWarningContainer,
                 ),
@@ -143,7 +148,7 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
         FilledButton.icon(
           onPressed: _pickImages,
           icon: const Icon(Icons.image_outlined),
-          label: const Text('选择二维码图片（可多选）'),
+          label: Text(l10n.pickQrImages),
         ),
 
         // Camera button (shown only when supported) --------------------------------
@@ -152,7 +157,7 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
           OutlinedButton.icon(
             onPressed: _openCamera,
             icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('摄像头扫码'),
+            label: Text(l10n.scanWithCamera),
           ),
         ],
 
@@ -166,9 +171,9 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
           style: theme.textTheme.bodyMedium?.copyWith(
             fontFamily: AppTheme.monoFontFamily,
           ),
-          decoration: const InputDecoration(
-            labelText: '粘贴 otpauth-migration 链接',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.pasteMigrationLinkLabel,
+            border: const OutlineInputBorder(),
             alignLabelWithHint: true,
           ),
         ),
@@ -178,7 +183,7 @@ class _ImportPanelState extends ConsumerState<ImportPanel> {
         // Parse button ------------------------------------------------------------
         OutlinedButton(
           onPressed: _decodePasted,
-          child: const Text('解析链接'),
+          child: Text(l10n.parseLink),
         ),
       ],
     );

@@ -1,0 +1,63 @@
+{
+  "@@locale": "en",
+  "appTitle": "OTP Migrator",
+  "tabImport": "Import",
+  "tabResults": "Results",
+  "webRiskWarning": "⚠️ Handling OTP credentials in a browser carries a risk of leakage. For sensitive scenarios, prefer the desktop app.",
+  "pickQrImages": "Pick QR code images (multi-select)",
+  "scanWithCamera": "Scan with camera",
+  "pasteMigrationLinkLabel": "Paste otpauth-migration link",
+  "parseLink": "Parse link",
+  "qrNotRecognized": "QR code not recognized",
+  "sourcePaste": "Paste",
+  "sourceCamera": "Camera",
+  "emptyResultsHint": "Import QR codes on the left to see the parsed results here",
+  "mergeExportDedup": "Merge export (deduplicated)",
+  "clear": "Clear",
+  "export": "Export",
+  "noAccountsToShow": "No accounts to show",
+  "exportFormatJson": "JSON file",
+  "exportFormatCsv": "CSV file",
+  "exportFormatText": "Text URL list",
+  "exportFormatUrl": "URL format",
+  "exportFormatQrImages": "QR code images (one per account)",
+  "noAccountsToExport": "No accounts to export. Please import OTP data first.",
+  "exportCancelled": "Cancelled",
+  "exportedTo": "Exported to: {dest}",
+  "@exportedTo": {
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "digitsCount": "{count} digits",
+  "@digitsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showQrCode": "Show QR code",
+  "scanQrCode": "Scan QR Code",
+  "close": "Close",
+  "groupNoAccounts": "(no accounts)",
+  "groupParseFailed": "Parse failed, no account data",
+  "languageMenuTooltip": "Language",
+  "languageEnglish": "English",
+  "languageChinese": "简体中文",
+  "languageSystem": "System / 跟随系统",
+  "about": "About",
+  "aboutVersion": "Version",
+  "aboutSourceCode": "Source code"
+}
