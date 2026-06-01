@@ -68,7 +68,8 @@ jobs:
             printf '| Platform | Arch | Asset |\n|---|---|---|\n'
             printf '| Windows | x64 | `otp_migrator-windows-x64.zip` |\n'
             printf '| Windows | arm64 (Flutter master, experimental) | `otp_migrator-windows-arm64.zip` |\n'
-            printf '| macOS | universal (arm64+x64) | `otp_migrator-macos-universal.zip` |\n'
+            printf '| macOS | arm64 (Apple Silicon) | `otp_migrator-macos-arm64.zip` |\n'
+            printf '| macOS | x64 (Intel) | `otp_migrator-macos-x64.zip` |\n'
             printf '| Linux | x64 | `otp_migrator-linux-x64.tar.gz` |\n'
             printf '| Linux | arm64 | `otp_migrator-linux-arm64.tar.gz` |\n'
             printf '| Android | arm64-v8a | `otp_migrator-android-arm64-v8a.apk` |\n'
@@ -228,7 +229,26 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: { flutter-version: "3.41.6", channel: stable, cache: true }
       - run: flutter pub get
-      # macOS builds a universal binary (arm64 + x86_64) — covers both Apple Silicon and Intel.
+      # Flutter emits a universal (arm64+x86_64) .app; thin it into per-arch bundles.
       - run: flutter build macos --release --build-name "$VERSION" --build-number "$GITHUB_RUN_NUMBER"
-      - run: cd build/macos/Build/Products/Release && zip -rq "$GITHUB_WORKSPACE/otp_migrator-macos-universal.zip" otp_migrator.app
-      - run: gh release upload "$TAG" otp_migrator-macos-universal.zip --clobber
+      - name: Split universal .app into x64 + arm64 bundles
+        run: |
+          set -euo pipefail
+          SRC="build/macos/Build/Products/Release/otp_migrator.app"
+          for pair in "x86_64:x64" "arm64:arm64"; do
+            ARCH="${pair%%:*}"; LABEL="${pair##*:}"
+            OUT="otp_migrator.app"
+            WORK="dist-${LABEL}"
+            rm -rf "$WORK"; mkdir "$WORK"; cp -R "$SRC" "$WORK/$OUT"
+            # Thin every fat Mach-O inside the bundle to the target arch.
+            while IFS= read -r f; do
+              if lipo -info "$f" 2>/dev/null | grep -q "Architectures in the fat file"; then
+                lipo "$f" -thin "$ARCH" -output "$f"
+              fi
+            done < <(find "$WORK/$OUT" -type f)
+            # Thinning invalidates code signatures; re-sign ad-hoc.
+            codesign --force --deep --sign - "$WORK/$OUT"
+            ( cd "$WORK" && ditto -c -k --keepParent "$OUT" "$GITHUB_WORKSPACE/otp_migrator-macos-${LABEL}.zip" )
+          done
+          echo "built: otp_migrator-macos-x64.zip otp_migrator-macos-arm64.zip"
+      - run: gh release upload "$TAG" otp_migrator-macos-x64.zip otp_migrator-macos-arm64.zip --clobber
